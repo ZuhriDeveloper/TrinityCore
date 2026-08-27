@@ -59,14 +59,19 @@ else()
 endif()
 
 # Set build-directive (used in core to tell which buildtype we used)
-if(CMAKE_MAKE_PROGRAM MATCHES "nmake")
-  target_compile_definitions(trinity-compile-option-interface
-    INTERFACE
-      -D_BUILD_DIRECTIVE="${CMAKE_BUILD_TYPE}")
-else()
+# $(ConfigurationName) is an MSBuild variable and only expands under a Visual Studio
+# generator. Under Ninja it is emitted verbatim and its bare $ breaks build.ninja
+# escaping ("bad $-escape"), so gate it on the generator rather than on nmake alone.
+# $<CONFIG> is what every other compiler's settings.cmake already uses and it works
+# for both single- and multi-config generators.
+if(CMAKE_GENERATOR MATCHES "Visual Studio")
   target_compile_definitions(trinity-compile-option-interface
     INTERFACE
       -D_BUILD_DIRECTIVE="$(ConfigurationName)")
+else()
+  target_compile_definitions(trinity-compile-option-interface
+    INTERFACE
+      -D_BUILD_DIRECTIVE="$<CONFIG>")
 endif()
 
 # multithreaded compiling on VS

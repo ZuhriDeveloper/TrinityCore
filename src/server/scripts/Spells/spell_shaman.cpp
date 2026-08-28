@@ -712,31 +712,40 @@ class spell_sha_lava_lash : public SpellScript
         if (!target || !caster)
             return;
 
-        int32 bonusDamage = 0;
+        int32 bonusPct = 0;
 
         // Increase damage of lava lash by 40% if the offhand weapon is enchanted with Flametongue
         if (Item* offhand = caster->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND))
             if (offhand->GetEnchantmentId(TEMP_ENCHANTMENT_SLOT) == SHAMAN_ENCHANTMENT_ID_FLAMETONGUE)
-                bonusDamage += GetSpellInfo()->Effects[EFFECT_1].CalcValue(caster);
+                bonusPct += GetSpellInfo()->Effects[EFFECT_1].CalcValue(caster);
 
         // Improved Lava Lash
         if (AuraEffect const* bonusAura = caster->GetDummyAuraEffect(SPELLFAMILY_SHAMAN, SHAMAN_ICON_ID_IMPROVED_LAVA_LASH, EFFECT_1))
         {
             if (Aura* aura = target->GetAura(SPELL_SHAMAN_SEARING_FLAMES_DAMAGE, caster->GetGUID()))
             {
-                bonusDamage += bonusAura->GetAmount() * aura->GetStackAmount();
+                bonusPct += bonusAura->GetAmount() * aura->GetStackAmount();
                 aura->Remove();
             }
 
             if (target->HasAura(SPELL_SHAMAN_FLAME_SHOCK, caster->GetGUID()))
                 caster->CastSpell(target, SPELL_SHAMAN_LAVA_LASH_SPREAD_FLAME_SHOCK, CastSpellExtraArgs(bonusAura).AddSpellMod(SPELLVALUE_MAX_TARGETS, 4));
         }
-        SetEffectValue(GetEffectValue() + bonusDamage);
+
+        if (!bonusPct)
+            return;
+
+        // Both bonuses increase the damage of the whole ability, they are not added to its weapon damage percentage.
+        int32 damage = GetHitDamage();
+        AddPct(damage, bonusPct);
+        SetHitDamage(damage);
     }
 
     void Register() override
     {
-        OnEffectLaunchTarget.Register(&spell_sha_lava_lash::HandleDamageBonus, EFFECT_0, SPELL_EFFECT_WEAPON_PERCENT_DAMAGE);
+        // SPELL_EFFECT_WEAPON_PERCENT_DAMAGE recalculates its effect value from the spell data while the effect is
+        // handled, so SetEffectValue on launch gets discarded. The bonus has to be applied to the damage on hit.
+        OnEffectHitTarget.Register(&spell_sha_lava_lash::HandleDamageBonus, EFFECT_0, SPELL_EFFECT_WEAPON_PERCENT_DAMAGE);
     }
 };
 

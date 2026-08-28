@@ -279,6 +279,19 @@ target_include_directories(storm
 
 target_compile_definitions(storm PUBLIC __STORMLIB_NO_STATIC_LINK__)
 
+if (MSVC)
+  # Same fix already applied to dep/gsoap: _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES
+  # rewrites strcpy on a fixed-size array into strcpy_s using the DECLARED array
+  # bound. StormLib allocates several structures with the C "struct hack" -- e.g.
+  # TMPQSearch ends in `char szSearchMask[1]` and SFileFindFirstFile over-allocates
+  # so the mask fits past the end. The rewrite cannot see that extra space, so
+  # strcpy_s is handed a size of 1 and kills the process through the CRT invalid
+  # parameter handler. Third-party code with hand-managed buffers must opt out.
+  target_compile_definitions(storm
+    PRIVATE
+      -D_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=0)
+endif()
+
 target_link_libraries(storm
   PRIVATE
     trinity-dependency-interface

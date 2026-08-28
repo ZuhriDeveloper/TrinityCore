@@ -445,6 +445,20 @@ DetectPosCollision = 1
 CheckGameObjectLoS = 1
 
 #
+#    LineOfSight.IgnoreM2
+#        Description: Whether spell line of sight ignores M2 doodads - trees, fences,
+#                     wagons, crates. Only spells opt out of M2; creature sight and every
+#                     other line of sight check already includes them.
+#                     Enabled matches upstream: only WMO buildings block a spell, so a
+#                     player can shoot through a tree. Terrain never blocks either way -
+#                     line of sight is vmap models plus game objects, nothing else.
+#        Default:     1 - (Enabled, doodads do not block spells)
+#                     0 - (Disabled, doodads block spells; costs some false
+#                          "cannot see target" next to small props)
+
+LineOfSight.IgnoreM2 = 1
+
+#
 #    UpdateUptimeInterval
 #        Description: Update realm uptime period (in minutes).
 #        Default:     10 - (10 minutes)

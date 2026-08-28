@@ -1638,6 +1638,9 @@ void World::LoadConfigSettings(bool reload)
     // Whether to use LoS from game objects
     m_bool_configs[CONFIG_CHECK_GOBJECT_LOS] = sConfigMgr->GetBoolDefault("CheckGameObjectLoS", true);
 
+    // Whether spell line of sight ignores M2 doodads (trees, fences, crates)
+    m_bool_configs[CONFIG_LINE_OF_SIGHT_IGNORE_M2] = sConfigMgr->GetBoolDefault("LineOfSight.IgnoreM2", true);
+
     // Allow to cache data queries
     m_bool_configs[CONFIG_CACHE_DATA_QUERIES] = sConfigMgr->GetBoolDefault("CacheDataQueries", true);
 

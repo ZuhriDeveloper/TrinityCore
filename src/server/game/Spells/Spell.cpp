@@ -66,6 +66,17 @@
 
 extern SpellEffectHandlerFn SpellEffectHandlers[TOTAL_SPELL_EFFECTS];
 
+// Upstream never lets M2 doodads - trees, fences, wagons, crates - block spell line of
+// sight, because their collision hulls are coarse enough to produce false "cannot see
+// target" failures. Clearing LineOfSight.IgnoreM2 folds them back into the check.
+static VMAP::ModelIgnoreFlags ResolveLineOfSightIgnoreFlags(VMAP::ModelIgnoreFlags ignoreFlags)
+{
+    if (sWorld->getBoolConfig(CONFIG_LINE_OF_SIGHT_IGNORE_M2))
+        return ignoreFlags;
+
+    return VMAP::ModelIgnoreFlags(uint32(ignoreFlags) & ~uint32(VMAP::ModelIgnoreFlags::M2));
+}
+
 SpellDestination::SpellDestination()
 {
     _position.Relocate(0, 0, 0, 0);
@@ -7863,7 +7874,7 @@ bool Spell::CheckEffectTarget(Unit const* target, uint32 eff, Position const* lo
             if (!corpse->HasFlag(CORPSE_FIELD_FLAGS, CORPSE_FLAG_LOOTABLE))
                 return false;
 
-            if (!corpse->IsWithinLOSInMap(m_caster, LINEOFSIGHT_ALL_CHECKS, VMAP::ModelIgnoreFlags::M2))
+            if (!corpse->IsWithinLOSInMap(m_caster, LINEOFSIGHT_ALL_CHECKS, ResolveLineOfSightIgnoreFlags(VMAP::ModelIgnoreFlags::M2)))
                 return false;
 
             break;
@@ -8761,7 +8772,7 @@ bool Spell::IsWithinLOS(WorldObject const* source, WorldObject const* target, bo
 
     WorldObject const* src = targetAsSourceLocation ? target : source;
     WorldObject const* dst = targetAsSourceLocation ? source : target;
-    return src->IsWithinLOSInMap(dst, LINEOFSIGHT_ALL_CHECKS, ignoreFlags);
+    return src->IsWithinLOSInMap(dst, LINEOFSIGHT_ALL_CHECKS, ResolveLineOfSightIgnoreFlags(ignoreFlags));
 }
 
 bool Spell::IsWithinLOS(WorldObject const* source, Position const& target, VMAP::ModelIgnoreFlags ignoreFlags) const
@@ -8772,7 +8783,7 @@ bool Spell::IsWithinLOS(WorldObject const* source, Position const& target, VMAP:
     if (DisableMgr::IsDisabledFor(DISABLE_TYPE_SPELL, m_spellInfo->Id, nullptr, SPELL_DISABLE_LOS))
         return true;
 
-    return source->IsWithinLOS(target.GetPositionX(), target.GetPositionY(), target.GetPositionZ(), LINEOFSIGHT_ALL_CHECKS, ignoreFlags);
+    return source->IsWithinLOS(target.GetPositionX(), target.GetPositionY(), target.GetPositionZ(), LINEOFSIGHT_ALL_CHECKS, ResolveLineOfSightIgnoreFlags(ignoreFlags));
 }
 
 namespace Trinity

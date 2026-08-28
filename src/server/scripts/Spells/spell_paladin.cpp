@@ -843,24 +843,25 @@ class spell_pal_templar_s_verdict : public SpellScript
 
     void HandleDamageBonus(SpellEffIndex /*effIndex*/)
     {
-        int32 damage = GetEffectValue();
-        float damageMod = 1.f;
+        // The cast itself already consumed one holy power, the remaining charges are taken when the spell finishes.
+        Unit* caster = GetCaster();
+        uint8 holyPower = caster->HasAura(SPELL_PALADIN_DIVINE_PURPOSE_PROC) ? 3 : (caster->GetPower(POWER_HOLY_POWER) + 1);
 
-        if (GetCaster()->HasAura(SPELL_PALADIN_DIVINE_PURPOSE_PROC))
-            damageMod = 7.83334f; // 235%
-        else
-        {
-            int32 hp = GetCaster()->GetPower(POWER_HOLY_POWER);
-            if (hp >= 1)
-                damageMod = hp > 1 ? 7.83334f : 3.f;
-        }
+        float damageMod = 1.f;                          //  30% weapon damage
+        if (holyPower >= 3)
+            damageMod = 7.83334f;                       // 235% weapon damage
+        else if (holyPower == 2)
+            damageMod = 3.f;                            //  90% weapon damage
 
-        SetEffectValue(damage * damageMod);
+        SetHitDamage(int32(GetHitDamage() * damageMod));
     }
 
     void Register() override
     {
-        OnEffectLaunchTarget.Register(&spell_pal_templar_s_verdict::HandleDamageBonus, EFFECT_0, SPELL_EFFECT_WEAPON_PERCENT_DAMAGE);
+        // SPELL_EFFECT_WEAPON_PERCENT_DAMAGE recalculates its effect value from the spell data while the effect is
+        // handled, so SetEffectValue on launch gets discarded. Holy power multiplies the final damage anyway, so the
+        // multiplier is applied on hit just like Shield of the Righteous does.
+        OnEffectHitTarget.Register(&spell_pal_templar_s_verdict::HandleDamageBonus, EFFECT_0, SPELL_EFFECT_WEAPON_PERCENT_DAMAGE);
     }
 };
 

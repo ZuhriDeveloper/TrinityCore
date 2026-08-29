@@ -480,9 +480,9 @@ uint32 PhasingHandler::GetTerrainMapId(PhaseShift const& phaseShift, uint32 mapI
     if (phaseShift.VisibleMapIds.empty())
         return mapId;
 
-    if (phaseShift.VisibleMapIds.size() == 1)
-        return phaseShift.VisibleMapIds.begin()->first;
-
+    // No size() == 1 shortcut here: terrain swaps in `terrain_swap_defaults` cover only
+    // part of their parent map, so a single visible map id still has to be checked
+    // against the grid files before it is used.
     GridCoord gridCoord = Trinity::ComputeGridCoord(x, y);
     int32 gx = (MAX_NUMBER_OF_GRIDS - 1) - gridCoord.x_coord;
     int32 gy = (MAX_NUMBER_OF_GRIDS - 1) - gridCoord.y_coord;

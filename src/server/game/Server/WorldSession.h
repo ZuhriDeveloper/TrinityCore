@@ -684,6 +684,13 @@ class TC_GAME_API WorldSession
 
         void SendConnectToInstance(WorldPackets::Auth::ConnectToSerial serial);
         void HandleContinuePlayerLogin();
+
+        // [hook] playerbot: server-side login for a socketless session. Mirrors
+        // HandleContinuePlayerLogin without the client handshake -- no _legitCharacters
+        // check (PlayerbotMgr validates ownership itself) and no ResumeComms, since a bot
+        // has no second connection to resume. Lives in the core because LoginQueryHolder is
+        // local to CharacterHandler.cpp and m_playerLoading has no setter.
+        bool LoginBotPlayer(ObjectGuid guid);
         void AbortLogin(WorldPackets::Character::LoginFailureReason reason);
         void HandleLoadScreenOpcode(WorldPackets::Character::LoadingScreenNotify& packet);
         void HandlePlayerLogin(LoginQueryHolder const& holder);

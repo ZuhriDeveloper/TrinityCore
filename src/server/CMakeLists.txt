@@ -31,5 +31,17 @@ add_subdirectory(database)
 add_subdirectory(shared)
 add_subdirectory(authserver)
 add_subdirectory(game)
+
+# The playerbot module lives outside this submodule, so it needs an explicit binary
+# directory -- CMake cannot derive one for a source dir outside the source tree.
+# A missing tree is a hard error: -DPRABOBOTS=1 quietly producing a core without bots
+# is the worst failure mode available here.
+if(PRABOBOTS)
+  if(NOT EXISTS "${PRABOBOTS_SOURCE_DIR}/CMakeLists.txt")
+    message(FATAL_ERROR "PRABOBOTS=1 but no CMakeLists.txt found at ${PRABOBOTS_SOURCE_DIR}")
+  endif()
+  add_subdirectory("${PRABOBOTS_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/src/prabobots")
+endif()
+
 add_subdirectory(scripts)
 add_subdirectory(worldserver)

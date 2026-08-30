@@ -214,6 +214,12 @@ target_link_libraries(scripts
   PUBLIC
     game-interface)
 
+# PUBLIC so prabobots reaches worldserver's link line transitively through scripts;
+# worldserver/CMakeLists.txt needs no edit. custom_script_loader.cpp is the caller.
+if(PRABOBOTS)
+  target_link_libraries(scripts PUBLIC prabobots)
+endif()
+
 target_include_directories(scripts
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR})

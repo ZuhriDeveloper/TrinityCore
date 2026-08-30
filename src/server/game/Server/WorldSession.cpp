@@ -185,7 +185,11 @@ WorldSession::~WorldSession()
     while (_recvQueue.next(packet))
         delete packet;
 
-    LoginDatabase.PExecute("UPDATE account SET online = 0 WHERE id = %u;", GetAccountId());     // One-time query
+    // [hook] playerbot: bots share the owner's account id, so this would mark the owner
+    // offline while they are still playing. The matching online = 1 write in the
+    // constructor is already inside if (sock), so this only restores the symmetry.
+    if (!IsBotSession())
+        LoginDatabase.PExecute("UPDATE account SET online = 0 WHERE id = %u;", GetAccountId());     // One-time query
 }
 
 bool WorldSession::PlayerDisconnected() const
@@ -679,9 +683,15 @@ void WorldSession::LogoutPlayer(bool save)
         TC_LOG_DEBUG("network", "SESSION: Sent SMSG_LOGOUT_COMPLETE Message");
 
         //! Since each account can only have one online character at any given time, ensure all characters for active account are marked as offline
-        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ACCOUNT_ONLINE);
-        stmt->setUInt32(0, GetAccountId());
-        CharacterDatabase.Execute(stmt);
+        //! [hook] playerbot: that assumption does not hold for us -- an alt army puts several
+        //! characters of one account in the world at once, so a bot logging out must not
+        //! sweep the owner and its siblings offline.
+        if (!IsBotSession())
+        {
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ACCOUNT_ONLINE);
+            stmt->setUInt32(0, GetAccountId());
+            CharacterDatabase.Execute(stmt);
+        }
     }
 
     if (m_Socket[CONNECTION_TYPE_INSTANCE])

@@ -778,6 +778,31 @@ void WorldSession::HandleContinuePlayerLogin()
     });
 }
 
+// [hook] playerbot
+bool WorldSession::LoginBotPlayer(ObjectGuid guid)
+{
+    if (PlayerLoading() || GetPlayer())
+        return false;
+
+    m_playerLoading = guid;
+
+    std::shared_ptr<LoginQueryHolder> holder = std::make_shared<LoginQueryHolder>(GetAccountId(), guid);
+    if (!holder->Initialize())
+    {
+        m_playerLoading.Clear();
+        return false;
+    }
+
+    // Completed from ProcessQueryCallbacks() in WorldSession::Update, which PlayerbotMgr
+    // drives every world tick. From here on the bot walks the real login path.
+    AddQueryHolderCallback(CharacterDatabase.DelayQueryHolder(holder)).AfterComplete([this](SQLQueryHolderBase const& holder)
+    {
+        HandlePlayerLogin(static_cast<LoginQueryHolder const&>(holder));
+    });
+
+    return true;
+}
+
 void WorldSession::AbortLogin(WorldPackets::Character::LoginFailureReason reason)
 {
     if (!PlayerLoading() || GetPlayer())

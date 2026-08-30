@@ -514,6 +514,12 @@ class TC_GAME_API WorldSession
         AccountTypes GetSecurity() const { return _security; }
         uint32 GetAccountId() const { return _accountId; }
         Player* GetPlayer() const { return _player; }
+
+        // [hook] playerbot: socketless sessions owned by PlayerbotMgr. They never enter
+        // World::m_sessions (that map is keyed by account id and bots share the owner's
+        // account), so the core cannot reach them through any of its usual session paths.
+        bool IsBotSession() const { return _isBotSession; }
+        void SetBotSession(bool state) { _isBotSession = state; }
         std::string const& GetPlayerName() const;
         std::string GetPlayerInfo() const;
 
@@ -1354,6 +1360,7 @@ class TC_GAME_API WorldSession
         ObjectGuid::LowType m_GUIDLow;                      // set logined or recently logout player (while m_playerRecentlyLogout set)
         Player* _player;
         std::shared_ptr<WorldSocket> m_Socket[2];
+        bool _isBotSession = false;             // [hook] playerbot
         std::string m_Address;                              // Current Remote Address
      // std::string m_LAddress;                             // Last Attempted Remote Adress - we can not set attempted ip for a non-existing session!
 
